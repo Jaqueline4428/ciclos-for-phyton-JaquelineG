@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Tareas</title>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <style>
+         body{
+         font-family:Arial;
+         padding:20px;
+         }
+         input,button{
+         padding:10px;
+         margin:5px;
+         }
+         table{
+         border-collapse:collapse;
+         margin-top:20px;
+         }
+         th,td{
+         border:1px solid gray;
+         padding:10px;
+         }
+         canvas{
+         width:700px;
+         margin-top:30px;
+         }
+      </style>
+   </head>
+   <body>
+      <h2>Registro de tareas</h2>
+      <input id="nombre" placeholder="Nombre tarea">
+      <input id="fecha" type="date">
+      <button onclick="guardar()">
+      Guardar
+      </button>
+      <h3>Listado</h3>
+      <table>
+         <thead>
+            <tr>
+               <th>ID</th>
+               <th>Nombre</th>
+               <th>Fecha</th>
+               <th>Acción</th>
+            </tr>
+         </thead>
+         <tbody id="tabla">
+         </tbody>
+      </table>
+      <h3>Gráfica</h3>
+      <canvas id="grafica"></canvas>
+      <script>
+         let chart=null;
+         
+         async function guardar(){
+         
+         const nombre=
+         document.getElementById("nombre").value;
+         
+         const fecha=
+         document.getElementById("fecha").value;
+         
+         await fetch(
+         "http://127.0.0.1:8000/tareas",
+         {
+         method:"POST",
+         
+         headers:{
+         "Content-Type":"application/json"
+         },
+         
+         body:JSON.stringify({
+         nombre:nombre,
+         fecha:fecha
+         })
+         });
+         
+         cargarTodo();
+         
+         }
+         
+         
+         
+         
+         async function cargarTodo(){
+         
+         const respuesta=await fetch(
+         "http://127.0.0.1:8000/tareas"
+         );
+         
+         const datos=await respuesta.json();
+         
+         cargarTabla(datos);
+         
+         cargarGrafica(datos);
+         
+         }
+         
+         function cargarTabla(datos){
+         
+         let tabla=
+         document.getElementById("tabla");
+         
+         tabla.innerHTML="";
+         
+         datos.forEach(x=>{
+         
+         tabla.innerHTML += `
+         <tr>
+         
+         <td>${x.id}</td>
+         
+         <td>${x.nombre}</td>
+         
+         <td>${x.fecha}</td>
+         
+         <td>
+         
+         <button onclick="eliminar(${x.id})">
+         
+         Eliminar
+         
+         </button>
+         
+         </td>
+         
+         </tr>
+         `;
+         
+         });
+         
+         }
+         
+         function cargarGrafica(datos){
+         
+         const conteo={};
+         
+         datos.forEach(x=>{
+         
+         let mes=
+         new Date(x.fecha)
+         .toLocaleString(
+         'es-ES',
+         {month:'long'}
+         );
+         
+         conteo[mes]=(conteo[mes] || 0)+1;
+         
+         });
+         
+         const meses=Object.keys(conteo);
+         
+         const cantidades=
+         Object.values(conteo);
+         
+         if(chart){
+         chart.destroy();
+         }
+         
+         chart=new Chart(
+         
+         document.getElementById("grafica"),
+         
+         {
+         
+         type:"bar",
+         
+         data:{
+         
+         labels:meses,
+         
+         datasets:[{
+         
+         label:"Tareas por mes",
+         
+         data:cantidades
+         
+         }]
+         
+         }
+         
+         });
+         
+         }
+         
+         cargarTodo();
+         
+      </script>
+   </body>
+</html>
